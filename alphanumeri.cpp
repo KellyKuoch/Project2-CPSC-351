@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
         inputPhrase[strcspn(inputPhrase, "\n")] = '\0';
     }
 
-    // create alpha and numeric threads
+    // create alpha and numeric thrads
     pthread_t alphaTid, numericTid;
     pthread_create(&alphaTid, NULL, alphaThread, NULL);
     pthread_create(&numericTid, NULL, numericThread, NULL);
