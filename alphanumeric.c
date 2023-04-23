@@ -1,65 +1,143 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <iostream>
+#include <string>
+#include <cctype>
+#include <bits/stdc++.h>
 #include <pthread.h>
 
-// global variable to hold the input phrase
-char inputPhrase[1000];
+#define UNLOCKED false
+#define LOCKED true
 
-// function to be executed by alpha thread
-void* alphaThread(void* arg) {
-    char* start = inputPhrase;
-    char* end = strpbrk(start, " \t\n\r");
-    while (end != NULL) {
-        if (isalpha(*start)) {
-            printf("alpha: %.*s\n", (int)(end - start), start);
+std::string input_phrase;
+
+bool bit[2] = {UNLOCKED, LOCKED};
+
+std::stringstream read;
+std::string word;
+
+void *alpha(void *);
+void *numeric(void *);
+
+/**
+ * @brief This function is the numeric thread. It will print out all words that start with a digit.
+ */
+void *numeric(void *arg)
+{
+    // while there are still words to read
+    while (read)
+    {
+        // if the word starts with a digit
+        if (isdigit(word[0]))
+        {
+            // print the numeric
+            std::cout << "numeric: " << word << std::endl;
+            // lock the numeric thread
+            bit[1] = LOCKED;
         }
-        start = end + 1;
-        end = strpbrk(start, " \t\n\r");
+        else
+        {
+            // otherwise, unlock the alpha thread
+            bit[0] = UNLOCKED;
+            // and unlock the numeric thread
+            bit[1] = UNLOCKED;
+            // if the alpha thread finishes reading the input_phrase
+            if (!read)
+            {
+                // stop here
+                break;
+            }
+            // while alpha thread is unlocked
+            while (bit[0] == UNLOCKED)
+            {
+                // wait for it to finish
+                continue;
+            }
+        }
+        // if numeric thread is locked
+        if (bit[1] == LOCKED)
+        {
+            // read the next word in the input_phrase
+            read >> word;
+        }
     }
-    if (*start != '\0' && isalpha(*start)) {
-        printf("alpha: %s\n", start);
-    }
-    pthread_exit(NULL);
+    // then unlock the alpha thread
+    bit[0] = UNLOCKED;
+    // exit the thread
+    pthread_exit(0);
 }
 
-// function to be executed by numeric thread
-void* numericThread(void* arg) {
-    char* start = inputPhrase;
-    char* end = strpbrk(start, " \t\n\r");
-    while (end != NULL) {
-        if (isdigit(*start)) {
-            printf("numeric: %.*s\n", (int)(end - start), start);
+/**
+ * @brief This function is the alpha thread. It will print out all words that start with an alphabet.
+ */
+void *alpha(void *arg)
+{
+    // while there are still words to read
+    while (read)
+    {
+        // if the word starts with an alphabet character
+        if (isalpha(word[0]))
+        {
+            // print the word
+            std::cout << "alpha: " << word << std::endl;
+            // lock the alpha thread
+            bit[1] = LOCKED;
         }
-        start = end + 1;
-        end = strpbrk(start, " \t\n\r");
+        else
+        {
+            // otherwise, lock the numeric thread
+            bit[0] = LOCKED;
+            // and unlock the alpha thread
+            bit[1] = UNLOCKED;
+            // if the numeric thread finishes reading the input_phrase
+            if (!read)
+            {
+                // stop here
+                break;
+            }
+            // while the numeric thread is locked
+            while (bit[0] == LOCKED)
+            {
+                // wait for it to finish
+                continue;
+            }
+        }
+        // if the numeric thread is locked
+        if (bit[1] == LOCKED)
+        {
+            // read the next word in the input_phrase
+            read >> word;
+        }
     }
-    if (*start != '\0' && isdigit(*start)) {
-        printf("numeric: %s\n", start);
-    }
-    pthread_exit(NULL);
+    // lock the numeric thread
+    bit[0] = true;
+    // exit the thread
+    pthread_exit(0);
 }
 
-int main(int argc, char** argv) {
-
-    // read input phrase from command line argument or stdin
-    if (argc == 2) {
-        strncpy(inputPhrase, argv[1], sizeof(inputPhrase));
-    } else {
+int main(int argc, char *argv[])
+{
+    // if no arguments are given
+    if (argc < 2)
+    {
+        // prompt user for input phrase
         printf("Enter string: ");
-        fgets(inputPhrase, sizeof(inputPhrase), stdin);
-        inputPhrase[strcspn(inputPhrase, "\n")] = '\0';
+        // read input phrase
+        getline(std::cin, input_phrase);
     }
+    else
+        // otherwise, read the input phrase from the command line
+        input_phrase = argv[1];
 
-    // create alpha and numeric thrads
-    pthread_t alphaTid, numericTid;
-    pthread_create(&alphaTid, NULL, alphaThread, NULL);
-    pthread_create(&numericTid, NULL, numericThread, NULL);
-
-    // wait for threads to finish
-    pthread_join(alphaTid, NULL);
-    pthread_join(numericTid, NULL);
-
+    // initialize parser to read first word in input_phrase
+    read << input_phrase;
+    read >> word;
+    // define the alpha and numeric concurrent threads
+    pthread_t alpha_thread, num_thread;
+    // create the threads
+    pthread_create(&alpha_thread, NULL, alpha, NULL);
+    pthread_create(&num_thread, NULL, numeric, NULL);
+    // wait for the threads to finish
+    pthread_join(alpha_thread, NULL);
+    pthread_join(num_thread, NULL);
+    // if we made it here, then the program has finished, return 0
     return 0;
 }

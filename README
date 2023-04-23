@@ -1,0 +1,4 @@
+To compile the program: `g++ alphanumeric.c -o out -pthread`
+To run the program: 
+    1) `./out "this 1 is 2 a 3 test 4 string"`
+    2) `./out` > "Enter String:" this 1 is 2 a 3 test 4 string
