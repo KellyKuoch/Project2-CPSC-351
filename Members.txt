@@ -1,4 +1,4 @@
 Name:                     Email:
 Kelly Kuoch
-Jake Harvanchik
+Jake Harvanchik           harvanchik@csu.fullerton.edu
 Nicholas Egas             nicholasegas@csu.fullerton.edu
